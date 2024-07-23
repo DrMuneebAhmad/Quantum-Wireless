@@ -1,0 +1,83 @@
+function qnn_sic_two_users
+    % Define quantum gate functions
+    function H = Hadamard()
+        H = (1/sqrt(2)) * [1, 1; 1, -1];
+    end
+
+    function RX = RX(theta)
+        RX = [cos(theta/2), -1i*sin(theta/2); -1i*sin(theta/2), cos(theta/2)];
+    end
+
+    function RY = RY(theta)
+        RY = [cos(theta/2), -sin(theta/2); sin(theta/2), cos(theta/2)];
+    end
+
+    function RZ = RZ(theta)
+        RZ = [exp(-1i*theta/2), 0; 0, exp(1i*theta/2)];
+    end
+
+    function result = measure(state)
+        % Measure the quantum state (simplified for this example)
+        probabilities = abs(state).^2;
+        result = rand() < probabilities(1);
+    end
+
+    % Initialize qubits in |00> state
+    qubits = [1; 0; 0; 0];
+
+    % Apply Hadamard gates to create superposition
+    H = kron(Hadamard(), Hadamard());
+    qubits = H * qubits;
+
+    % Encode user signals using rotation gates
+    theta1 = pi/4;  % Example angle for user 1
+    theta2 = pi/3;  % Example angle for user 2
+    R = kron(RX(theta1), RX(theta2));
+    qubits = R * qubits;
+
+    % Example QNN layer: CNOT gate and another rotation
+    CNOT = [1, 0, 0, 0; 0, 1, 0, 0; 0, 0, 0, 1; 0, 0, 1, 0];
+    qubits = CNOT * qubits;
+
+    % Apply another set of rotations
+    theta3 = pi/6;
+    R2 = kron(RY(theta3), RZ(theta3));
+    qubits = R2 * qubits;
+
+    % Measure qubit states
+    result1 = measure(qubits(1:2));
+    disp(['Decoded Signal for User 1: ', num2str(result1)]);
+
+    % Subtract the decoded signal of user 1 (simplified example)
+    if result1 == 1
+        qubits = qubits - [1; 0; 0; 0];  % Example subtraction
+    end
+
+    % Re-normalize qubits (simplified)
+    qubits = qubits / norm(qubits);
+
+    % Measure remaining signal for user 2
+    result2 = measure(qubits(3:4));
+    disp(['Decoded Signal for User 2: ', num2str(result2)]);
+end
+
+% Call the function
+qnn_sic_two_users;
+
+% Define BPSK symbols
+symbols = [-1, 1];
+
+% Plot constellation diagram
+figure;
+scatter(real(symbols), imag(symbols), 'filled');
+title('BPSK Constellation Diagram');
+xlabel('In-Phase (I)');
+ylabel('Quadrature (Q)');
+grid on;
+
+% Annotate the symbols
+text(real(symbols(1)), imag(symbols(1)), ' 0', 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'right');
+text(real(symbols(2)), imag(symbols(2)), ' 1', 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'left');
+
+% Set axis limits
+axis([-2 2 -1 1]);
